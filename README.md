@@ -1,49 +1,32 @@
 # rete-rule-engine
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![CI](https://github.com/Trysac/u924-rete-rule-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/Trysac/u924-rete-rule-engine/actions/workflows/ci.yml)
-
-Forward-chaining production rule engine built on a Rete network with a small rule DSL, salience and recency conflict resolution, checked against a naive evaluator
-
-## Problem
-
-Describe in two or three sentences the concrete problem this utility solves, who hits it, and what
-they do today without it. Replace this paragraph when the first real feature lands.
-
-## Install
-
-Maven coordinates `io.github.trysac:rete-rule-engine`. Until it is published to Maven Central, build
-it from a release tag with `mvn install`, then declare:
-
-```xml
-<dependency>
-  <groupId>io.github.trysac</groupId>
-  <artifactId>rete-rule-engine</artifactId>
-  <version>0.1.0</version>
-</dependency>
-```
-
-Requires Java 21 or newer. No dependencies outside the standard library.
+Business rules written as nested if statements are re-evaluated against every fact on each change, becoming slow and hard to audit. Larger rule platforms add unnecessary runtime complexity. `rete-rule-engine` provides a dependency-free, Rete-based forward-chaining rule engine that maintains partial matches between changes, fires rules in a deterministic order, and is validated by differential testing against a naive evaluator.
 
 ## Usage
 
 ```java
-import io.github.trysac.rete_rule_engine.Text;
-
-// normalize trims surrounding whitespace and lower-cases the text.
-String name = Text.normalize("  Hello World "); // "hello world"
-
-// Blank input is rejected explicitly instead of returning an empty string.
-Text.normalize("   "); // throws BlankInputException ("input is blank")
+RuleSet rules = RuleParser.parse(
+    "rule \"adult\" when $p: Person(age >= 18, name == ?n) then insert Adult(name = ?n) end");
+Session session = new Session(rules);
+session.insert(Fact.of("Person", "name", "Ann", "age", 20L));
+int fired = session.run();
+List<Fact> adults = session.facts("Adult");
 ```
 
-## Documentation
+## API Summary
 
-- [Architecture](docs/ARCHITECTURE.md) and [decisions](docs/decisions/)
-- [Testing](docs/TESTING.md) and [security](docs/SECURITY.md)
-- [Project record](docs/PROJECT.md) and [stack](docs/STACK.md)
-- [Changelog](CHANGELOG.md) and [contributing guide](CONTRIBUTING.md)
+- **Compilation**: `RuleSet RuleParser.parse(String source)` parses rules into a set. Source length is limited to 65,536 characters.
+- **Execution**: `Session` handles state. Use `insert(Fact fact)` to add data and `run()` to fire rules until the agenda is empty. A safety limit of 10,000 firings prevents infinite loops.
+- **Data**: `Fact` holds immutable data (String, Long, Boolean). `Firing` records executed rules.
+- **Errors**: `RuleException` provides machine-readable codes: `syntax`, `unbound_variable`, `duplicate_rule`, `unknown_type_in_action`, `invalid_value`, `input_too_large`, `firing_limit`.
+- **Limits**: 
+  - `MAX_SOURCE_LENGTH = 65,536`.
+  - Max firings per `run()`: 10,000.
 
-## License
+## Why not Drools or Easy Rules?
 
-[MIT](LICENSE) (c) 2026 Miguel Gomez
+A dependency-free, readable Rete implementation with refraction and differential property testing. Drools is a heavy platform; Easy Rules lacks a Rete network.
+
+## Security
+
+See [docs/SECURITY.md](docs/SECURITY.md).

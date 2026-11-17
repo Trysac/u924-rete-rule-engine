@@ -1,2 +1,5 @@
-/** Forward-chaining production rule engine built on a Rete network with a small rule DSL, salience and recency conflict resolution, checked against a naive evaluator */
+/**
+ * Forward-chaining production rule engine built on a Rete network with salience, recency, and
+ * refraction conflict resolution.
+ */
 package io.github.trysac.rete_rule_engine;

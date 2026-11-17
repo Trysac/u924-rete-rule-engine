@@ -9,4 +9,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added forward-chaining Rete rule engine (`RuleParser`, `RuleSet`, `Session`, `Fact`, `FactHandle`, `Firing`, `NetworkStats`, `RuleException`) with shared alpha nodes, beta join/not nodes, salience/recency/refraction conflict resolution, and differential property tests.
 - Initial project structure from the factory utility template.

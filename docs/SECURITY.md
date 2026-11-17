@@ -2,24 +2,15 @@
 
 ## Threat model
 
-`io.github.trysac:rete-rule-engine` is a pure library without I/O. The main risks are:
+`io.github.trysac:rete-rule-engine` is a pure library without I/O or external network calls. 
 
-- **Supply chain**: a compromised dependency, Maven plugin or CI action. Mitigation: standard
-  library only, every plugin and dependency pinned to an exact version in `pom.xml`, OSV-Scanner
-  over every artifact Maven resolves and over `pom.xml` in the gates, Dependabot weekly updates,
-  actions pinned by commit SHA, minimal workflow permissions.
-- **Leaked secrets**: tokens committed by mistake. Mitigation: `gitleaks` runs in the local gates
-  and in CI; `.env` files are git-ignored.
-- **Insecure code**: command injection, unsafe deserialization, disabled TLS verification.
-  Mitigation: Error Prone and javac `-Xlint:all` with warnings as errors, and the factory's Semgrep
-  rules (`.semgrep/factory-rules.yml`, `nosemgrep` ignored); fix the code instead of silencing it.
-- **Untrusted input**: callers may pass hostile strings. Mitigation: validate input and throw
-  explicit, documented exceptions; never deserialize untrusted bytes with `ObjectInputStream`;
-  never start a shell with untrusted data.
+### Defended
 
-## Publishing
+- **Untrusted Input**: The parser enforces a strict source limit of 65,536 characters and throws `RuleException` for invalid syntax or logic, preventing resource exhaustion from massive rule sets.
+- **Infinite Loops**: `Session` bounds execution to 10,000 firings, throwing `firing_limit` when exceeded.
+- **Supply Chain**: The project uses no external dependencies beyond the standard library.
 
-Releases are git tags; publishing to Maven Central needs a namespace account and a signing key,
-which are never stored in the repository.
+### Not defended
 
-To report a vulnerability, see [SECURITY.md](../SECURITY.md).
+- Denial of Service via memory exhaustion: The engine holds state in memory (Alpha/Beta networks and Agenda). Extremely large sets of facts or rules may cause `OutOfMemoryError`.
+- Logic flaws in user-provided rules: The engine executes exactly what is parsed; it does not validate rule correctness or termination for user logic.
