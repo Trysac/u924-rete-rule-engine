@@ -1,11 +1,11 @@
 package io.github.trysac.rete_rule_engine;
 
-/** The input is empty or holds only whitespace. */
+/** Thrown when a text input is empty or contains only whitespace. */
 public final class BlankInputException extends IllegalArgumentException {
 
   private static final long serialVersionUID = 1L;
 
-  /** Creates the exception with the message {@code input is blank}. */
+  /** Creates the exception with the standard message {@code "input is blank"}. */
   public BlankInputException() {
     super("input is blank");
   }

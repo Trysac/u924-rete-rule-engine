@@ -1,31 +1,13 @@
 # Architecture
 
-## Purpose
+## Overview
 
-`io.github.trysac:rete-rule-engine` is a small, dependency-free Java library: Forward-chaining production rule engine built on a Rete network with a small rule DSL, salience and recency conflict resolution, checked against a naive evaluator
+`rete-rule-engine` compiles declarative rules written in a compact DSL into a shared Rete discrimination network:
 
-## Shape
-
-```text
-caller code --> package io.github.trysac.rete_rule_engine (src/main/java)
-                    |
-                    +-- final classes with static, pure functions; no I/O, no global mutable state
-                    +-- package-private helpers (optional)
-```
-
-- **Public API**: every `public` class and member of the package. Package-private classes may
-  change without a major version.
-- **Errors**: invalid input throws an `IllegalArgumentException` subclass of the library (such as
-  `BlankInputException`) documented with `@throws`; null arguments throw `NullPointerException`.
-  The library never prints or exits.
-- **Side effects**: none. If a feature needs I/O, accept an `InputStream`, a `Reader` or a small
-  interface instead of opening resources, and record the choice in an ADR.
-
-## Quality contract
-
-`scripts/Check.java` is the single definition of the gates; `fabrica.json` tells the factory and CI
-how to run it. See [TESTING.md](TESTING.md).
-
-## Decisions
-
-Architecture decisions are recorded in [decisions/](decisions/) as numbered ADRs.
+1. **Parser (`RuleParser`)**: Tokenizes and parses rules into an immutable `RuleSet`, validating source size (`<= 65,536` characters), unique rule names, variable binding order, and type names.
+2. **Alpha Network (`ReteNetwork.AlphaNode`)**: Deduplicates `(type, constantTests, selfTests)` across all rules so identical patterns share a single alpha memory.
+3. **Beta Network (`JoinNode`, `NegativeNode`, `TerminalNode`)**:
+   - `JoinNode` maintains left (tuple) and right (fact) memories indexed by equality join variables.
+   - `NegativeNode` tracks blocking right-hand facts per left tuple and propagates the tuple only when its blocker set is empty.
+   - `TerminalNode` pushes matches onto and retracts matches from the `Agenda`.
+4. **Agenda (`Agenda` & `Session`)**: Orders activations by salience (descending), sorted tuple fact-ID recency (descending), and rule declaration order (ascending), while enforcing refraction and a configurable `maxFirings` bound.
